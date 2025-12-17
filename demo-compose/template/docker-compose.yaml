@@ -1,0 +1,104 @@
+version: '3'
+# The latest and recommended version of the Compose file format is defined by the Compose Specification.
+# The 'version' key is now optional and largely ignored.
+# For full details, see the official Docker documentation.
+
+services:
+  webapp:
+    # --- Build Options ---
+    # Either specify a pre-built image, or a build configuration
+    # image: "myuser/mywebapp:latest" 
+    build:
+      context: ./webapp # The directory containing the Dockerfile and build context
+      dockerfile: Dockerfile.dev # Use a specific Dockerfile name
+      args:
+        - NODE_ENV=development # Build-time variables
+      # target: development-stage # Use a specific stage in a multi-stage Dockerfile
+    
+    # --- Networking & Ports ---
+    ports:
+      - "8000:8000" # Host:Container port mapping
+      - "2345:2345/tcp" # Protocol specification
+    networks:
+      - app-tier # Assign to a custom network
+    
+    # --- Environment Variables ---
+    environment:
+      DEBUG: "true"
+      DB_HOST: database # Hostname is the service name within the network
+    # Use an external file for many variables
+    # env_file: .env 
+    
+    # --- Volumes & Persistence ---
+    volumes:
+      - ./webapp:/app # Bind mount host directory to container path
+      - data-volume:/var/lib/data # Named volume for persistence
+      - /var/run/docker.sock:/var/run/docker.sock # Mount Docker socket (use with caution)
+    
+    # --- Secrets & Configs (for sensitive data/config files) ---
+    secrets:
+      - db_password
+    configs:
+      - http_config
+      
+    # --- Resource Constraints ---
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5' # Limit CPU usage to 0.5 cores
+          memory: 512M # Limit memory to 512MB
+        reservations:
+          memory: 128M # Reserve at least 128MB
+          
+    # --- Healthchecks & Dependencies ---
+    depends_on:
+      database:
+        condition: service_healthy # Wait for the database healthcheck to pass
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+    # --- Other Options ---
+    restart: unless-stopped # Restart policy
+    profiles: ["frontend"] # Only run with `docker compose --profile frontend up`
+    labels:
+      com.example.description: "My web application service"
+
+  database:
+    image: postgres:13
+    networks:
+      - app-tier
+      - db-isolated # Assign to multiple networks for security
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    secrets:
+      - db_password_file: db_password # Map the secret to a custom filename in container
+
+# --- Top-Level Sections ---
+
+volumes:
+  data-volume:
+    external: true # Use a volume created outside of compose
+  db-data:
+
+networks:
+  app-tier:
+    driver: bridge
+  db-isolated:
+    driver: bridge
+    internal: true # Isolates network from external access
+
+configs:
+  http_config:
+    file: ./httpd.conf # Source the config from a local file
+
+secrets:
+  db_password:
+    file: ./db_password.txt # Source the secret from a local file
+
+# --- Modularity and Extensibility ---
+# include:
+#   - team-1/compose.yaml # Include configs from other files

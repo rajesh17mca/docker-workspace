@@ -1,0 +1,15 @@
+version: '3'
+
+services:
+  my-nginx:
+    image: static-nginx:latest
+    volumes:
+      - /app/nginx
+    ports:
+      - 8080:80
+  my-httpd:
+    image: static-httpd:latest
+    volumes:
+      - /app/httpd
+    ports:
+      - 8081:80

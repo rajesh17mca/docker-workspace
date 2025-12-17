@@ -1,0 +1,25 @@
+version: '3.1'
+services:
+  fontend-app:
+    image: nginx:latest
+    ports:
+      - "8080:80"
+    volumes:
+      - nginx-logs:/var/logs/nginx
+ 
+  postgres:
+    image: postgres:14
+    environment:
+      - POSTGRES_PASSWORD_FILE=/run/secrets/psql-pw
+    secrets:
+      - psql-pw
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+volumes:
+  nginx-logs:
+  postgres-data:
+
+secrets:
+  psql-pw:
+    external: true
