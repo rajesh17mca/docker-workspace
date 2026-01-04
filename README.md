@@ -111,7 +111,7 @@ What happens when a Docker container run executed
 6. Opens up port 80 on the host and forwards to port 80 in the container
 7. Starts the container by using the CMD in the image Dockerfile
 ```
-Docker Networks Defaults
+### Docker Networks Defaults
 Docker provides several built-in network drivers that define how containers connect to each other and the outside world. The primary types of Docker networks include: 
 * Bridge (default): This is the most common and default network type. Containers on the same bridge network can communicate with each other and the host via a virtual bridge, but are isolated from external networks unless explicit port mapping is used (Network Address Translation - NAT). It's best for running containers on a single Docker host.
 * Host: The container shares the host machine's network stack directly, removing network isolation between the container and the host. This can offer better performance but may lead to port conflicts and reduce isolation.
