@@ -97,27 +97,37 @@ Performance of all running containers
 ```
 docker container stats
 ```
-What are the ports are opened on Docker Container
+What ports are opened on the Docker Container
 ```
 docker container port <ContainerID>
 ```
-What Happens when docker conatiner run executed
+What happens when a Docker container run executed
 ```
-1. Looks for that image locally in image cache, doesn't find anything
-2. Then looks in remote image repository (defaults to Docker Hub)
+1. Looks for that image locally in the image cache, doesn't find anything
+2. Then looks in the remote image repository (defaults to Docker Hub)
 3. Downloads the latest version (nginx:latest by default)
-4. Creates new container based on that image and prepares to start
-5. Gives it a virtual IP on a private network inside docker engine
-6. Opens up port 80 on host and forwards to port 80 in container
-7. Starts container by using the CMD in the image Dockerfile
+4. Creates a new container based on that image and prepares to start
+5. Gives it a virtual IP on a private network inside the Docker engine
+6. Opens up port 80 on the host and forwards to port 80 in the container
+7. Starts the container by using the CMD in the image Dockerfile
 ```
 Docker Networks Defaults
+Docker provides several built-in network drivers that define how containers connect to each other and the outside world. The primary types of Docker networks include: 
+* Bridge (default): This is the most common and default network type. Containers on the same bridge network can communicate with each other and the host via a virtual bridge, but are isolated from external networks unless explicit port mapping is used (Network Address Translation - NAT). It's best for running containers on a single Docker host.
+* Host: The container shares the host machine's network stack directly, removing network isolation between the container and the host. This can offer better performance but may lead to port conflicts and reduce isolation.
+* Overlay: Used in Docker Swarm mode, overlay networks connect containers running on different Docker hosts, allowing them to communicate as if they were on the same network. This is crucial for multi-host, distributed applications.
+* None: This network driver completely disables all networking for a container, leaving only the loopback interface. This is useful for high-security workloads or specific testing scenarios where a container should not have any network access. 
+
+Docker networking is the system that enables containers to communicate with each other, the host, and external networks. It defines how data moves between containers and across systems during containerized application execution.
+It provides isolated, flexible network environments using built-in drivers like bridge, host, overlay, and none. Each driver supports different use cases, such as local development, swarm-based orchestration, or integration with legacy infrastructure. 
+Proper network configuration is critical for performance, security, and service discovery.
+
 ```
-• Each container connected to a private virtual network "bridge"
-• Each virtual network routes through NAT firewall on host IP
+• Each container is connected to a private virtual network "bridge"
+• Each virtual network routes through a NAT firewall on the host IP
 • All containers on a virtual network can talk to each other without -p
 • Best practice is to create a new virtual network for each app:
-    * network "my_web_app" for mysql and php/apache containers
+    * network "my_web_app" for mysql and php/Apache containers
     * network "my_api" for mongo and nodejs containers
 ```
 Docker Networking commands
@@ -155,7 +165,7 @@ Dockerfile reference
 * SHELL - Set the default shell of an image.
 ```
 - ADD – Copies files, directories, or remote URLs into the image and can auto-extract archives.
-- ARG – Defines a build-time variable that can be passed during docker build.
+- ARG – Defines a build-time variable that can be passed during Docker build.
 - CMD – Sets default arguments for the container; can be overridden at runtime.
 - COPY – Copies files or directories from the build context into the image.
 - ENTRYPOINT – Defines the executable that will always run when the container starts.
@@ -173,7 +183,7 @@ Dockerfile reference
 - ONBUILD – Sets instructions that run when the image is used as a base for another image.
 - SHELL – Overrides the default shell used to execute commands like RUN.
 
-Example which covers all instructions 
+Example that covers all instructions 
 ```
 # FROM: Base image
 FROM ubuntu:22.04
@@ -184,7 +194,7 @@ MAINTAINER Rajesh <rajesh@example.com>
 # LABEL: Metadata for image
 LABEL app="demo-app" \
       version="1.0" \
-      description="Demo Dockerfile covering all instructions"
+      description="Demo Dockerfile covering all instructions."
 
 # ARG: Build-time variable
 ARG APP_VERSION=1.0.0
@@ -262,11 +272,11 @@ docker run -d --name new_container_name custom-nginx:v1
 - Containers are usually immutable and ephemeral
 - "immutable infrastructure": only re-deploy containers, never change
 - Two ways: 
-    * Volumes - Make special location outside of container UFS (Union File System)
+    * Volumes - Make a special location outside of the container UFS (Union File System)
     * Bind Mounts - Link container path to host path
 
-By Default volumes will be created at /var/lib/docker/volumes/<Volume_Name>/_data
-Docker Volume will be created with docker cli or docker instruction (VOLUME) in Dockerfile 
+By Default, volumes will be created at /var/lib/docker/volumes/<Volume_Name>/_data
+Docker Volume will be created with Docker CLI or the docker instruction (VOLUME) in Dockerfile 
 ```
 docker volume ls
 docker volume create rajesh_volume
@@ -277,7 +287,7 @@ docker volume prune
 docker run -v [SOURCE]:[DESTINATION] [IMAGE]
 docker run --mount type=volume,src=[VOLUME_NAME],dst=[CONTAINER_PATH]
 ```
-These volumes are created when ever the container created if we use the VOLUME instruction
+These volumes are created whenever the container is created if we use the VOLUME instruction
 ```
 FROM docker.io/library/httpd:latest
 RUN apt-get update 
@@ -285,12 +295,12 @@ RUN apt-get install -y curl
 VOLUME /app/logs/
 COPY ./index.html /usr/local/apache2/htdocs/index.html
 ```
-The Volume need to be cleaned up manually (Data still remains available) 
+The Volume needs to be cleaned up manually (Data still remains available) 
 ```
 docker volume rm <Volume_Name>
 docker volume rm 1c7fd83da68df8be7b409e2d8f8d356fd10580a5ffb9ca99a5c07e9637799962
 ```
-To overcome this issue, we can use the named volumes - which can be passed during the container run time (mysql_db is volume name)
+To overcome this issue, we can use the named volumes, which can be passed during the container run time (mysql_db is the volume name)
 ```
 docker run -it -d --name mysql_db -v mysql_db:/var/lib/mysql -e MYSQL_ALLOW_EMPTY_PASSWORD=true mysql
 
@@ -318,15 +328,15 @@ RUN apk add curl --no-cache
 RUN apk add bash --no-cache
 WORKDIR /usr/share/nginx/html/
 ```
-create index.html in the same location and run the docker containet with bind mounting option 
+Create index.html in the same location and run the Docker container with the bind mounting option 
 ```
 docker container run -d --name nginx_rajesh -v $(pwd):/usr/share/nginx/html/ -p 8080:80 nginx_rajesh
 ```
-TASK :: Postgress Database upgrade:
+TASK :: Postgres Database upgrade:
 - Database with container 
-    * postgress 15.1 version
+    * PostgreSQL 15.1 version
     * named volume - psql-data
-- Create new postgress container with same named volume using 15.2 version
+- Create a new Postgres container with same named volume using the 15.2 version
 
 Steps:
 Database setup
@@ -361,7 +371,7 @@ Runtime Instructions - CMD
 Both Build and Runtime Instructions - ENV
 
 
-If we have following dockerfile
+If we have the following Dockerfile
 ```
 FROM python:slim
 WORKDIR /application
@@ -372,9 +382,9 @@ CMD ["python", "app1.py"]
 CMD ["python", "app.py"]
 ```
 from the above file,
-- Second CMD command will override the First CMD,
-- Second WORKDIR command will override the First WORKDIR
-- Second EXPOSE Command will append to the First EXPOSE command
+- The second CMD command will override the First CMD.
+- The second WORKDIR command will override the First WORKDIR
+- The Second EXPOSE Command will append to the First EXPOSE Command
 
 In General, 
 - Build Time Commands - FROM, ADD, COPY, RUN, ARG, ONBUILD
@@ -387,14 +397,14 @@ In terms of the Additive or Overwrite nature
 
 --------
 ## Docker Compose
-docker-compose.yml is default filename, but any can be used with docker-compose -f
+docker-compose.yml is the default filename, but any can be used with docker-compose -f
 - configure relationships between containers
-- save our docker container run settings in easy-to-read file
+- save our Docker container run settings in an easy-to-read file
 - create one-liner developer environment startups
 
 Comprised of 2 separate but related things
-* YAML-formatted file that describes our solution options for containers, volumes, networks
-* A CLI tool docker-compose used for local dev/test automation with those YAML files
+* YAML-formatted file that describes our solution options for containers, volumes, and networks
+* A CLI tool, docker-compose, used for local dev/test automation with those YAML files
 
 ```
 docker compose --help
@@ -408,8 +418,8 @@ docker compose build
 docker compose exec <service_name> bash
 ```
 Few Other commands
-- start / stop / restart: Start, stop, or restart services without removing their containers.
-- pull / push: Pull (download) or push (upload) service images from/to a registry.
+- start/stop/restart: Start, stop, or restart services without removing their containers.
+- pull/push: Pull (download) or push (upload) service images from/to a registry.
 - rm: Remove stopped service containers.
 - run: Run a one-off command on a service (e.g., to run database migrations).
 - config: Validate and view the effective configuration of the Compose file.
@@ -459,12 +469,12 @@ docker service update <service-id> --replicas=3
 docker service rm <service_name>
 ```
 ### Handling Secrets in Docker Swarm
-* Secrets are first stored in Swarm, then assign to the service, Only containers in assigned service(s) can see them
-* They looks loke files in container but are actually in-memory fs
+* Secrets are first stored in Swarm, then assigned to the service. Only containers in assigned service(s) can see them
+* They look like files in a container but are actually in-memory fs
     ```
     /run/secrets/<secret_name>
     ```
-Secreat management - Both has drawbacks one is stored in file another one will show up in history
+Secret management - Both have drawbacks. One is stored in a file the one will show up in history
 ```
 docker secret create psql_user psql_user.txt
 echo "mypassword" | docker secret create psql_pass -
@@ -472,7 +482,7 @@ echo "mypassword" | docker secret create psql_pass -
 docker secret ls
 docker secret inspect psql_user
 ```
-Even if we inspect also the secreat will not be in plain text
+Even if we inspect also the secret will not be in plain text
 ```
 docker service create --name psql --secret psql_user --secret psql_pass -e POSTGRES_PASSWORD_FILE=/run/secrets/psql_pass -e POSTGRES_USER_FILE=/run/secrets/psql_user postgres
 ```
@@ -517,8 +527,8 @@ secrets:
     external: true
 ```
 Note:
-external: true -> Says that do not create secret which is already exist outside of this compose file
-Before creating a stack we have to create the secret 
+external: true -> Says that do not create a secret that already exists outside of this compose file
+Before creating a stack, we have to create the secret 
 ```
 echo "my-postgres-password" | docker secret create psql-pw -
 docker secret create psql-pw psql-password.txt
@@ -580,12 +590,12 @@ Docker swarm commands
 * Just edit the YAML file, then ```docker stack deploy -c file.yml <stackname>```
 
 Note:
-* build instruction in the docker compose file will be ignored by swarm
-* deploy instruction in the docker compose file will be ignored by compose
+* Build instructions in the Docker Compose file will be ignored by Swarm
+* Deploy instructions in the Docker Compose file will be ignored by Compose
 
 ### Docker Healthchecks
 * Supported in Dockerfile, Compose YAML, docker run, and Swarm Services
-* Docker engine will exec's the command in the container (localhost)
+* Docker engine will execute the command in the container (localhost)
 * It expects exit 0 (OK) or exit 1 (Error)
 * Three container states: 
     * starting
@@ -608,7 +618,7 @@ FROM nginx:1.13
 HEALTHCHECK --interval=30s --timeout=3s \
     CMD curl -f http://localhost/ || exit 1
 ```
-health check in Postgres docker file
+health check in Postgres Docker file
 ```
 FROM postgres
 HEALTHCHECK --interval=5s --timeout=3s \
@@ -651,21 +661,21 @@ services:
 * While CMD provides default arguments that can be easily overridden when running the container.
 * ENTRYPOINT should be used when you want a specific application to always run when your container starts, making the container behave like a self-contained binary.
 * CMD is ideal for providing default parameters that a user might want to change.
-* We can use both in the Dockerfile (ENTRYPOINT - To define primary command, CMD to define parameters for the primary command)
+* We can use both in the Dockerfile (ENTRYPOINT - To define the primary command, CMD to define parameters for the primary command)
 --------
 #### Is it possible to override the command with ENTRYPOINT
-* Yes it is poissible with help of the --entrypoint option during runtime 
+* Yes, it is possible with the help of the --entrypoint option during runtime 
 * ``` docker run --entrypoint date <Image_name> ```
 --------
 #### SHELL
 * Set the default shell of an image.
 * Example ```SHELL ["/bin/sh", "-c"]```
 --------
-#### Can we allocate cpu limits and requests in the docker container
+#### Can we allocate CPU limits and requests in the Docker container
 * Yes, Docker allows you to allocate both CPU limits and requests (referred to as "shares" and "quotas" in Docker CLI, and more clearly defined as "requests" and "limits" in Kubernetes) for individual containers to manage resource consumption and ensure fair distribution on a host machine. 
 * ```docker run -d --rm --cpu-period="100000" --cpu-quota="50000" my_image_name```
 * ```docker run -d --rm --cpu-shares 512 my_image_name```
-* we can also do this using docker compose 
+* We can also do this using Docker Compose 
     ```
     version: '3.8'
         services:
@@ -679,14 +689,14 @@ services:
                 cpus: '0.25' # CPU Request: guaranteed 0.25 CPU cores
     ```
 --------
-#### When we run docker compose up will it create separate network?
+#### When we run docker compose up, will it create a separate network?
 * Yes, when you run docker compose up, Docker Compose automatically creates a single, shared bridge network for all the services defined in your docker-compose.yml file, unless you specify otherwise. 
 --------
-#### Can we run multiple replicas of docker image using compose in single docker instance
+#### Can we run multiple replicas of a Docker image using Compose in a single Docker instance
 * Yes, you can run multiple replicas of a service on a single Docker instance using either the docker compose up --scale command or by using Docker Swarm mode.
 * docker compose up --scale <service_name>=<number_of_replicas>
 --------
-#### what is the default network in docker swarm
+#### What is the default network in Docker Swarm
 * In Docker Swarm, the two key default networks are the ingress overlay network for service discovery and routing (handling traffic to published ports) and the docker_gwbridge bridge network on each node for internal swarm communication; for individual containers not attached to a specific network, they use the host's default bridge network unless configured otherwise. When you create a swarm, the ingress overlay network is automatically set up for routing traffic to services across the cluster. 
 * ingress (Overlay): Handles external access to services (routing mesh) and internal swarm management traffic.
 * docker_gwbridge (Bridge): An internal bridge network on each node that connects the Docker daemon to the swarm, facilitating communication with the ingress network. 
@@ -694,7 +704,7 @@ services:
 * When a worker node joins, it gets its own docker_gwbridge.
 * When you create a service, tasks run on nodes and are connected to the ingress network for service communication, while also using docker_gwbridge to talk back to the manager. 
 --------
-#### How to connect from one container to another container in different network in docker
+#### How to connect from one container to another container in a different network in Docker
 * Method 1: Connect a Container to Both Networks (Recommended) 
     * ```docker network connect <network-name-2> <container-name-or-id>```
 * Method 2: Communicate via Published Ports on the Host 
@@ -704,15 +714,15 @@ services:
 * Docker Compose and Docker Swarm are tools within the Docker ecosystem that serve different primary functions
 * Compose is for defining and running multi-container applications on a single host, 
 * Swarm is an orchestration tool for managing a cluster of Docker hosts for fault tolerance and scalability.
-* Docker compose can build docker image, Swarm can't do that
-* Docker compose uses bridge network Swarm will use Overlay network
+* Docker Compose can build a Docker image, but Swarm can't do that
+* Docker Compose uses a bridge network. Swarm will use the Overlay network
 --------
-#### In the context of Dokcer Swarm, docker service for single container application and docker stack for multi container application?
-* Yes, The docker stack command is used to deploy a multi-service application (a "stack") defined in a Compose file to a Swarm cluster, where each component of that application is managed as an individual docker service. 
-* docker service: A docker service is a component of a distributed application running on a Docker Swarm. It's a definition of the tasks (containers) that the Swarm manager should run.
+#### In the context of Docker Swarm, Docker service for a single container application, and a Docker stack for multi container application?
+* Yes, the Docker stack command is used to deploy a multi-service application (a "stack") defined in a Compose file to a Swarm cluster, where each component of that application is managed as an individual Docker service. 
+* Docker service: A Docker service is a component of a distributed application running on a Docker Swarm. It's a definition of the tasks (containers) that the Swarm manager should run.
 * docker stack: The docker stack command deploys a complete multi-container application, typically defined in a single Compose YAML file, to a Swarm. 
 --------
-#### Docker Container, Docker Compose, Docker Service, docker Stack - In single sentence 
+#### Docker Container, Docker Compose, Docker Service, Docker Stack - In a single sentence 
 * A Docker Container is a lightweight, standalone, and executable software package that includes everything needed to run an application, created from a Docker image.
 * Docker Compose is a tool used to define and run multi-container Docker applications, using a YAML file to configure the application's services and networking.
 * A Docker Service is a running container in a Docker Swarm cluster, which allows for scaling the application across multiple machines with features like replication and load balancing
@@ -721,14 +731,14 @@ services:
 #### Do we need to execute the swarm commands in manager mode only?
 Yes, key swarm management commands like docker swarm init, join, and service management (create, update, scale, remove) must be run on a manager node, as they interact with the swarm's distributed state; however, worker nodes run containers (tasks) and handle the actual application load, while you can run some Docker commands on managers, it's best practice to keep manager workloads light and use constraints to run most services only on workers for stability and security. 
 --------
-#### Without swarm can we create docker secret
-No, you cannot create a Docker secret using the native docker secret create command without Docker Swarm mode enabled. Docker secrets are a core feature of Docker Swarm, designed for secure, encrypted management and distribution of sensitive data across a cluster. 
+#### Without swarm, can we create a Docker secret
+No, you cannot create a Docker secret using the native Docker secret create command without Docker Swarm mode enabled. Docker secrets are a core feature of Docker Swarm, designed for secure, encrypted management and distribution of sensitive data across a cluster. 
 --------
-#### What effect does the routing mesh have on a docker swarm cluster
+#### What effect does the routing mesh have on a Docker Swarm cluster
 The routing mesh in a Docker Swarm cluster provides built-in, transparent load balancing and high availability for services by enabling every node to accept traffic on a published port for any service task running in the cluster. It simplifies application access and scaling. 
 --------
 #### Docker swarm ingress load balancing
 Docker Swarm provides built-in ingress load balancing via its routing mesh and internal DNS service discovery. This system automatically distributes incoming traffic across all healthy replicas of a service, regardless of which node receives the request. 
 --------
-#### What is the docker swarm database 
+#### What is the Docker Swarm database 
 Raft
