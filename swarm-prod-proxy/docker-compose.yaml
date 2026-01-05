@@ -1,0 +1,50 @@
+version: "3.9"
+
+networks:
+  frontend:
+    driver: overlay
+    attachable: true
+
+services:
+  nginx:
+    image: nginx:1.26-alpine
+    ports:
+      - "80:80"
+    configs:
+      - source: nginx_conf
+        target: /etc/nginx/nginx.conf
+    networks:
+      - frontend
+    deploy:
+      mode: replicated
+      replicas: 2
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+      update_config:
+        parallelism: 1
+        delay: 10s
+
+  httpd:
+    image: httpd:2.4-alpine
+    # configs:
+    #   - source: httpd_conf
+    #     target: /usr/local/apache2/conf/httpd.conf
+    networks:
+      - frontend
+    deploy:
+      mode: replicated
+      replicas: 3
+      restart_policy:
+        condition: on-failure
+      update_config:
+        parallelism: 1
+        delay: 10s
+
+configs:
+  nginx_conf:
+    file: ./nginx/nginx.conf
+  # httpd_conf:
+  #   file: ./httpd/httpd.conf

@@ -428,16 +428,52 @@ Few Other commands
 
 Example:
 ```
-version: '3'
 services:
-  proxy:
-    image: nginx:latest
+  api:
+    build:
+      context: ./backend
+      target: production
+    image: myapp-api:1.0.0
     ports:
-      - '80:80'
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgres://user:password@db:5432/appdb
+    depends_on:
+      - db
+    networks:
+      - app-network
+
+  frontend:
+    image: nginx:alpine 
+    ports:
+      - "80:80" 
     volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf
-  web:
-    image: httpd:2
+      - type: bind
+        source: ./frontend/nginx.conf
+        target: /etc/nginx/conf.d/default.conf
+        read_only: true
+    networks:
+      - app-network
+
+  db:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: appdb
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/create_tables.sql
+    networks:
+      - app-network
+
+volumes:
+  db-data: 
+
+networks:
+  app-network:
+    driver: bridge
 ```
 
 ### Docker Swarm
