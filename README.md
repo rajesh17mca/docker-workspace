@@ -426,6 +426,19 @@ Few Other commands
 - cp: Copy files or folders between a service container and the local filesystem.
 - version: Show the installed Docker Compose version information. 
 
+Example:
+```
+version: '3'
+services:
+  proxy:
+    image: nginx:latest
+    ports:
+      - '80:80'
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+  web:
+    image: httpd:2
+```
 
 ### Docker Swarm
 These commands are used for the overall management and lifecycle of the swarm. 
